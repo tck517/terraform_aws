@@ -14,19 +14,19 @@ module "networking" {
   db_subnet_group  = true
 }
 
-#module "database" {
-#  source                 = "./database"
-#  db_storage             = 10
-#  db_engine_version      = "5.7.22"
-#  db_instance_class      = "db.t2.micro"
-#  dbname                 = var.dbname
-#  dbuser                 = var.dbuser
-#  dbpassword             = var.dbpassword
-#  db_identifier          = "mtc-db"
-#  skip_db_snapshot       = true
-#  db_subnet_group_name   = module.networking.db_subnet_group_name[0]
-#  vpc_security_group_ids = module.networking.db_security_group
-#}
+module "database" {
+  source                 = "./database"
+  db_storage             = 10
+  db_engine_version      = "5.7.22"
+  db_instance_class      = "db.t2.micro"
+  dbname                 = var.dbname
+  dbuser                 = var.dbuser
+  dbpassword             = var.dbpassword
+  db_identifier          = "mtc-db"
+  skip_db_snapshot       = true
+  db_subnet_group_name   = module.networking.db_subnet_group_name[0]
+  vpc_security_group_ids = module.networking.db_security_group
+}
 
 
 module "loadbalancing" {
@@ -45,10 +45,17 @@ module "loadbalancing" {
 }
 
 module "compute" {
-  source         = "./compute"
-  instance_count = 1
-  instance_type  = "t3.micro"
-  public_sg      = module.networking.public_sg
-  public_subnets = module.networking.public_subnets
-  vol_size       = 10
+  source          = "./compute"
+  instance_count  = 1
+  instance_type   = "t3.micro"
+  public_sg       = module.networking.public_sg
+  public_subnets  = module.networking.public_subnets
+  vol_size        = 10
+  key_name        = "mtckey"
+  public_key_path = "/home/ubuntu/.ssh/keymtc.pub"
+  user_data_path  = "${path.root}/userdata.tpl"
+  dbname                 = var.dbname
+  dbuser                 = var.dbuser
+  dbpassword             = var.dbpassword
+  db_endpoint = module.database.db_endpoint
 }

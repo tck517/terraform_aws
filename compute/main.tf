@@ -15,6 +15,11 @@ resource "random_id" "mtc_node_id" {
   count       = var.instance_count
 }
 
+resource "aws_key_pair" "mtc_auth" {
+  key_name   = var.key_name
+  public_key = file(var.public_key_path)
+}
+
 resource "aws_instance" "mtc_node" {
   count         = var.instance_count # 1
   instance_type = var.instance_type  # t3.micro
@@ -23,11 +28,18 @@ resource "aws_instance" "mtc_node" {
     Name = "mtc_node-${random_id.mtc_node_id[count.index].dec}"
   }
 
-
-  # key_name = ""
+  key_name               = aws_key_pair.mtc_auth.id
   vpc_security_group_ids = [var.public_sg]
   subnet_id              = var.public_subnets[count.index]
-  #user_data = ""
+  user_data = templatefile(var.user_data_path, 
+    {
+      nodename = "mtc-${random_id.mtc_node_id[count.index].dec}"
+      db_endpoint = var.db_endpoint
+      dbuser = var.dbuser
+      dbpass = var.dbpassword
+      dbname = var.dbname
+    }
+  )
   root_block_device {
     volume_size = var.vol_size
   }
